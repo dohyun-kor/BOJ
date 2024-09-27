@@ -31,7 +31,9 @@ public class Main
 		for(int k=1; k<N+1; k++){
 		    for(int i=1; i<N+1; i++){
 		        for(int j=1; j<N+1; j++){
-		            floyd[i][j] = Math.min(floyd[i][j], floyd[i][k] + floyd[k][j]);
+		            if(floyd[i][j] > floyd[i][k] + floyd[k][j])
+		            floyd[i][j] = floyd[i][k] + floyd[k][j];
+		          //  floyd[i][j] = Math.min(floyd[i][j], floyd[i][k] + floyd[k][j]);
 		        }
 		    }
 		}
