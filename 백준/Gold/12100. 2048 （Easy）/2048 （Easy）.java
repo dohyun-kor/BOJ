@@ -59,8 +59,8 @@ public class Main
 			}
 		}
 
+		Queue<block> q = new ArrayDeque<>();
 		for(int curdir : dirr) {
-			Queue<block> q = new LinkedList<>();
 			boolean visited[][] = new boolean[N][N];
 			if(curdir == 0 || curdir == 3) {
 				for(int i=0; i<N; i++) {
@@ -149,11 +149,7 @@ public class Main
 		        }
 		    }
 		}
-// 		for(int i=0; i<N; i++){
-// 		    System.out.println(Arrays.toString(copymap[i]));
-// 		}
-// 		System.out.println("---------------------");
-// 		System.out.println(max_v);
+
 		return max_v;
 	}
 
