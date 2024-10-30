@@ -32,12 +32,12 @@ public class Main
 	}
 	
 	static void comb(){
-        Queue<mynum> q = new ArrayDeque<>();
+        ArrayDeque<mynum> q = new ArrayDeque<>();
         String first = ""+N;
-        q.add(new mynum(first, 0));
+        q.addLast(new mynum(first, 0));
         
         while(!q.isEmpty()){
-            mynum curnum = q.poll();
+            mynum curnum = q.removeFirst();
             if(curnum.count == K){
                 answer = Math.max(answer, Integer.parseInt(curnum.num));
                 continue;
@@ -49,13 +49,15 @@ public class Main
             for(int i=0; i<nums.length-1; i++){
                 for(int j=i+1; j<nums.length; j++){
                     char newnums[] = curnum.num.toCharArray();
+                    char temp = nums[i];
+                    
                     char swapnum1 = nums[i];
                     char swapnum2 = nums[j];
                     newnums[i] = swapnum2;
                     newnums[j] = swapnum1;
                     if(newnums[0] == '0') continue;
                     String nnums = new String(newnums);
-                    q.add(new mynum(nnums, curnum.count + 1));
+                    q.addLast(new mynum(nnums, curnum.count + 1));
                 }
             }
         }
