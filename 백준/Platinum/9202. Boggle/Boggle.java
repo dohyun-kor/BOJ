@@ -5,12 +5,11 @@ public class Main {
 
     static int w, b, allPoint, allCount, longLength;
     static String dummy, longString;
-    static int dx[] = new int[] {-1, -1, 0, 1, 1, 1, 0, -1};
-    static int dy[] = new int[] {0, 1, 1, 1, 0, -1, -1, -1};
+    static final int dx[] = {-1, -1, 0, 1, 1, 1, 0, -1};
+    static final int dy[] = {0, 1, 1, 1, 0, -1, -1, -1};
     static Trie trie;
-    static Character dice[][];
-    static HashMap<String, Integer> checkword;
-    static PriorityQueue<String> pq;
+    static Character[][] dice;
+    static HashSet<String> foundWords;
 
     static class Node {
         HashMap<Character, Node> child;
@@ -29,42 +28,32 @@ public class Main {
             this.root = new Node();
         }
 
-        public void insert(String words) {
-            Node curnode = this.root;
-
-            for (int i = 0; i < words.length(); i++) {
-                Character a = words.charAt(i);
-
-                if (!curnode.child.containsKey(a)) {
-                    curnode.child.put(a, new Node());
-                }
-                curnode = curnode.child.get(a);
+        public void insert(String word) {
+            Node curNode = root;
+            for (char ch : word.toCharArray()) {
+                curNode = curNode.child.computeIfAbsent(ch, k -> new Node());
             }
-            curnode.endWord = true;
+            curNode.endWord = true;
         }
 
-        public int search(String words) {
-            Node curnode = this.root;
-
-            for (int i = 0; i < words.length(); i++) {
-                Character a = words.charAt(i);
-
-                if (!curnode.child.containsKey(a)) return 1;
-                curnode = curnode.child.get(a);
+        public Node getNode(String prefix) {
+            Node curNode = root;
+            for (char ch : prefix.toCharArray()) {
+                curNode = curNode.child.get(ch);
+                if (curNode == null) return null;
             }
-            if (!curnode.endWord) return 2;
-            return 3;
+            return curNode;
         }
     }
 
     public static void main(String[] args) throws Exception {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         StringBuilder sb = new StringBuilder();
+
         w = Integer.parseInt(br.readLine());
         trie = new Trie();
         for (int i = 0; i < w; i++) {
-            String s = br.readLine();
-            trie.insert(s);
+            trie.insert(br.readLine());
         }
         dummy = br.readLine();
 
@@ -75,70 +64,61 @@ public class Main {
             allCount = 0;
             longLength = 0;
             longString = "";
+            foundWords = new HashSet<>();
+
             for (int i = 0; i < 4; i++) {
-                String ss = br.readLine();
+                String row = br.readLine();
                 for (int j = 0; j < 4; j++) {
-                    dice[i][j] = ss.charAt(j);
+                    dice[i][j] = row.charAt(j);
                 }
             }
-            checkword = new HashMap<>();
-            pq = new PriorityQueue<>();
+
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
-                    boolean[][] visited = new boolean[4][4];
-                    dfs(i, j, "" + dice[i][j], visited);
+                    dfs(i, j, "" + dice[i][j], new boolean[4][4], trie.root.child.get(dice[i][j]));
                 }
             }
-            longString = pq.poll();
-            sb.append(allPoint).append(" ").append(longString).append(" ").append(allCount);
-            sb.append("\n");
+
+            sb.append(allPoint).append(" ").append(longString).append(" ").append(allCount).append("\n");
             if (c != b - 1) dummy = br.readLine();
         }
-        System.out.println(sb);
+
+        System.out.print(sb);
     }
 
-    static void dfs(int x, int y, String word, boolean[][] visited) {
-        if (trie.search(word) == 1) return; // Not a valid prefix
+    static void dfs(int x, int y, String word, boolean[][] visited, Node curNode) {
+        if (curNode == null) return; // No valid prefix
 
-        if (trie.search(word) == 3 && !checkword.containsKey(word)) {
-            checkword.put(word, 1);
+        if (curNode.endWord && foundWords.add(word)) {
             addPoint(word);
             allCount++;
-
-            if (longLength < word.length()) {
+            if (word.length() > longLength || (word.length() == longLength && word.compareTo(longString) < 0)) {
                 longLength = word.length();
-                pq.clear();
-                pq.add(word);
-            } else if (longLength == word.length()) {
-                pq.add(word);
+                longString = word;
             }
         }
 
         visited[x][y] = true;
 
-        for (int k = 0; k < 8; k++) {
-            int ni = x + dx[k];
-            int nj = y + dy[k];
+        for (int dir = 0; dir < 8; dir++) {
+            int nx = x + dx[dir];
+            int ny = y + dy[dir];
 
-            if (ni < 0 || nj < 0 || ni >= 4 || nj >= 4 || visited[ni][nj]) continue;
-
-            dfs(ni, nj, word + dice[ni][nj], visited);
+            if (nx >= 0 && ny >= 0 && nx < 4 && ny < 4 && !visited[nx][ny]) {
+                dfs(nx, ny, word + dice[nx][ny], visited, curNode.child.get(dice[nx][ny]));
+            }
         }
 
         visited[x][y] = false; // Backtrack
     }
 
-    static void addPoint(String nv) {
-        if (nv.length() == 3 || nv.length() == 4) {
-            allPoint += 1;
-        } else if (nv.length() == 5) {
-            allPoint += 2;
-        } else if (nv.length() == 6) {
-            allPoint += 3;
-        } else if (nv.length() == 7) {
-            allPoint += 5;
-        } else if (nv.length() == 8) {
-            allPoint += 11;
+    static void addPoint(String word) {
+        switch (word.length()) {
+            case 3: case 4: allPoint += 1; break;
+            case 5: allPoint += 2; break;
+            case 6: allPoint += 3; break;
+            case 7: allPoint += 5; break;
+            case 8: allPoint += 11; break;
         }
     }
 }
