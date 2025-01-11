@@ -9,8 +9,18 @@ public class Main {
     static int dy[] = new int[] {0, 1, 1, 1, 0, -1, -1, -1};
     static Trie trie;
     static Character dice[][];
-    static HashSet<String> checkword;
+    static HashMap<String, Integer> checkword;
     static PriorityQueue<String> pq;
+
+    static class Node {
+        HashMap<Character, Node> child;
+        boolean endWord;
+
+        Node() {
+            this.child = new HashMap<>();
+            this.endWord = false;
+        }
+    }
 
     static class Trie {
         Node root;
@@ -20,41 +30,43 @@ public class Main {
         }
 
         public void insert(String words) {
-            Node currentNode = this.root;
+            Node curnode = this.root;
+
             for (int i = 0; i < words.length(); i++) {
-                char c = words.charAt(i);
-                currentNode.child.putIfAbsent(c, new Node());
-                currentNode = currentNode.child.get(c);
+                Character a = words.charAt(i);
+
+                if (!curnode.child.containsKey(a)) {
+                    curnode.child.put(a, new Node());
+                }
+                curnode = curnode.child.get(a);
             }
-            currentNode.endWord = true;
+            curnode.endWord = true;
         }
 
         public int search(String words) {
-            Node currentNode = this.root;
-            for (int i = 0; i < words.length(); i++) {
-                char c = words.charAt(i);
-                if (!currentNode.child.containsKey(c)) return 1; // 단어 경로 없음
-                currentNode = currentNode.child.get(c);
-            }
-            return currentNode.endWord ? 3 : 2; // 3: 완전 단어, 2: 경로만 존재
-        }
-    }
+            Node curnode = this.root;
 
-    static class Node {
-        Map<Character, Node> child = new HashMap<>();
-        boolean endWord = false;
+            for (int i = 0; i < words.length(); i++) {
+                Character a = words.charAt(i);
+
+                if (!curnode.child.containsKey(a)) return 1;
+                curnode = curnode.child.get(a);
+            }
+            if (!curnode.endWord) return 2;
+            return 3;
+        }
     }
 
     public static void main(String[] args) throws Exception {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
+        StringBuilder sb = new StringBuilder();
         w = Integer.parseInt(br.readLine());
         trie = new Trie();
-
         for (int i = 0; i < w; i++) {
-            trie.insert(br.readLine());
+            String s = br.readLine();
+            trie.insert(s);
         }
-        dummy = br.readLine(); // 빈 줄
+        dummy = br.readLine();
 
         b = Integer.parseInt(br.readLine());
         for (int c = 0; c < b; c++) {
@@ -63,118 +75,70 @@ public class Main {
             allCount = 0;
             longLength = 0;
             longString = "";
-            
             for (int i = 0; i < 4; i++) {
-                String line = br.readLine();
+                String ss = br.readLine();
                 for (int j = 0; j < 4; j++) {
-                    dice[i][j] = line.charAt(j);
+                    dice[i][j] = ss.charAt(j);
                 }
             }
-
-            checkword = new HashSet<>();
+            checkword = new HashMap<>();
             pq = new PriorityQueue<>();
-
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
-                    bfs(i, j);
+                    boolean[][] visited = new boolean[4][4];
+                    dfs(i, j, "" + dice[i][j], visited);
                 }
             }
-
-            longString = pq.isEmpty() ? "" : pq.poll();
-            System.out.println(allPoint + " " + longString + " " + allCount);
-
-            if (c != b - 1) dummy = br.readLine(); // 빈 줄 처리
+            longString = pq.poll();
+            sb.append(allPoint).append(" ").append(longString).append(" ").append(allCount);
+            sb.append("\n");
+            if (c != b - 1) dummy = br.readLine();
         }
+        System.out.println(sb);
     }
 
-    static void bfs(int x, int y) {
-        Queue<Info> q = new LinkedList<>();
-        boolean[][] visited = new boolean[4][4];
+    static void dfs(int x, int y, String word, boolean[][] visited) {
+        if (trie.search(word) == 1) return; // Not a valid prefix
+
+        if (trie.search(word) == 3 && !checkword.containsKey(word)) {
+            checkword.put(word, 1);
+            addPoint(word);
+            allCount++;
+
+            if (longLength < word.length()) {
+                longLength = word.length();
+                pq.clear();
+                pq.add(word);
+            } else if (longLength == word.length()) {
+                pq.add(word);
+            }
+        }
+
         visited[x][y] = true;
 
-        String startWord = "" + dice[x][y];
-        q.add(new Info(x, y, startWord, visited));
+        for (int k = 0; k < 8; k++) {
+            int ni = x + dx[k];
+            int nj = y + dy[k];
 
-        if (trie.search(startWord) == 3 && checkword.add(startWord)) {
-            addPoint(startWord);
-            allCount++;
-            updateLongestWord(startWord);
+            if (ni < 0 || nj < 0 || ni >= 4 || nj >= 4 || visited[ni][nj]) continue;
+
+            dfs(ni, nj, word + dice[ni][nj], visited);
         }
 
-        while (!q.isEmpty()) {
-            Info cur = q.poll();
-
-            for (int k = 0; k < 8; k++) {
-                int ni = cur.x + dx[k];
-                int nj = cur.y + dy[k];
-
-                if (ni < 0 || nj < 0 || ni >= 4 || nj >= 4 || cur.visited[ni][nj]) continue;
-
-                String nextWord = cur.word + dice[ni][nj];
-                if (trie.search(nextWord) == 1) continue; // 유효하지 않은 경로
-
-                boolean[][] newVisited = copyVisited(cur.visited);
-                newVisited[ni][nj] = true;
-                q.add(new Info(ni, nj, nextWord, newVisited));
-
-                if (trie.search(nextWord) == 3 && checkword.add(nextWord)) {
-                    addPoint(nextWord);
-                    allCount++;
-                    updateLongestWord(nextWord);
-                }
-            }
-        }
+        visited[x][y] = false; // Backtrack
     }
 
-    static void updateLongestWord(String word) {
-        if (word.length() > longLength) {
-            longLength = word.length();
-            pq.clear();
-            pq.add(word);
-        } else if (word.length() == longLength) {
-            pq.add(word);
-        }
-    }
-
-    static boolean[][] copyVisited(boolean[][] visited) {
-        boolean[][] newVisited = new boolean[4][4];
-        for (int i = 0; i < 4; i++) {
-            System.arraycopy(visited[i], 0, newVisited[i], 0, 4);
-        }
-        return newVisited;
-    }
-
-    static void addPoint(String word) {
-        switch (word.length()) {
-            case 3:
-            case 4:
-                allPoint += 1;
-                break;
-            case 5:
-                allPoint += 2;
-                break;
-            case 6:
-                allPoint += 3;
-                break;
-            case 7:
-                allPoint += 5;
-                break;
-            case 8:
-                allPoint += 11;
-                break;
-        }
-    }
-
-    static class Info {
-        int x, y;
-        String word;
-        boolean[][] visited;
-
-        Info(int x, int y, String word, boolean[][] visited) {
-            this.x = x;
-            this.y = y;
-            this.word = word;
-            this.visited = visited;
+    static void addPoint(String nv) {
+        if (nv.length() == 3 || nv.length() == 4) {
+            allPoint += 1;
+        } else if (nv.length() == 5) {
+            allPoint += 2;
+        } else if (nv.length() == 6) {
+            allPoint += 3;
+        } else if (nv.length() == 7) {
+            allPoint += 5;
+        } else if (nv.length() == 8) {
+            allPoint += 11;
         }
     }
 }
