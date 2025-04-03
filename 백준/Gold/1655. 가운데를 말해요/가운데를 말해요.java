@@ -6,6 +6,7 @@ public class Main{
     static int N;
     static PriorityQueue<numb> pq;
     static PriorityQueue<reversenumb> reversePq;
+    static StringBuilder sb;
     
     static class numb implements Comparable<numb>{
         int n;
@@ -36,6 +37,7 @@ public class Main{
     public static void main(String args[]) throws Exception{
         
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        sb = new StringBuilder();
         
         N = Integer.parseInt(br.readLine());
         
@@ -44,12 +46,13 @@ public class Main{
         
         for(int i=0; i<N; i++){
             int number = Integer.parseInt(br.readLine());
-            System.out.println(pqadd(number));
+            pqadd(number);
         }
+        System.out.println(sb);
         
     }
     
-    static String pqadd(int number){
+    static void pqadd(int number){
         if(pq.size() == reversePq.size()){
             pq.add(new numb(number));
             if(!reversePq.isEmpty()){
@@ -60,7 +63,7 @@ public class Main{
                     reversePq.add(new reversenumb(b));
                 }
             }
-            return String.valueOf(pq.peek().n);
+            sb.append(pq.peek().n).append("\n");
         }else{
             reversePq.add(new reversenumb(number));
             if(!pq.isEmpty()){
@@ -71,7 +74,7 @@ public class Main{
                     reversePq.add(new reversenumb(b));
                 }
             }
-            return String.valueOf(reversePq.peek().n);
+            sb.append(reversePq.peek().n).append("\n");
         }
     }
 }
